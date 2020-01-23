@@ -1,0 +1,16 @@
+{
+    "protoc": {
+        "compile_on_save": true,
+        "options": [
+            "--proto_path=protos",
+            "--python_out=${workspaceRoot}/gen/python"
+        ]
+    },
+    "cSpell.words": [
+        "proto",
+        "stuffnodes"
+    ],
+    "cSpell.enabledLanguageIds": [
+        "proto3"
+    ]
+}

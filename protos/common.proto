@@ -1,0 +1,22 @@
+/*
+* Common API elements for stuffnodes interfaces
+*/
+syntax = "proto3";
+
+/*
+* API versions
+*/
+enum CommonApiVersion {
+    option allow_alias = true;
+    UNKNOWN = 0;
+    SUPPORTED = 1;
+    CURRENT = 1;
+}
+
+/*
+* Common result codes
+*/
+enum Result {
+    OK = 0;     // All good
+    ERROR = 1;  // Unspecified error
+}
