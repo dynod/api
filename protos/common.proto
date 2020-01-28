@@ -1,22 +1,41 @@
 /*
-* Common API elements for stuffnodes interfaces
+Common API elements for stuffnodes interfaces
 */
 syntax = "proto3";
 
 /*
-* API versions
+API versions:
+When connecting, the client must check versions with the following rules:
+ - if its current version is greater than the server current one, the server is "too old" for that client
+ - if its current version is lower than the server minimum one, that client is "too old" for the server
 */
 enum CommonApiVersion {
     option allow_alias = true;
     UNKNOWN = 0;
-    SUPPORTED = 1;
-    CURRENT = 1;
+    SUPPORTED = 1;      // Minimum supported version for clients
+    CURRENT = 1;        // Current version
 }
 
 /*
-* Common result codes
+Common result codes, used as return status by all methods
 */
 enum Result {
     OK = 0;     // All good
     ERROR = 1;  // Unspecified error
+}
+
+/*
+Common structure to identify a node
+*/
+message Node {
+    string id = 1;  // Unique identifier for this node
+}
+
+/*
+Node description structure
+*/
+message NodeDescription {
+    Node node = 1;      // Node reference
+    string name = 2;    // Name of the node
+    string type = 3;    // Type of the node
 }
