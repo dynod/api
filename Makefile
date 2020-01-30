@@ -8,14 +8,14 @@ $(error "protoc" is not installed)
 endif
 
 # Some paths & defs
-GEN := gen
 PROTOS := protos
-PYTHON_GEN := $(GEN)/python
+PYTHON := python
+PYTHON_GEN := $(PYTHON)/src/stuffnodes/api
 PROTO_BUILD := $(PROTOC) --proto_path=$(PROTOS)
 
 # Inputs/outputs
 APIS := $(shell find $(PROTOS) -name *.proto)
-PYTHON_INTERFACES := $(foreach API,$(APIS),$(PYTHON_GEN)/$(subst $(PROTOS)/,,$(subst .proto,,$(API)))_pb2.py)
+PYTHON_INTERFACES := $(foreach API,$(APIS),$(PYTHON_GEN)/$(subst $(PROTOS)/,,$(subst .proto,,$(API)))_gen.py)
 
 # Targets
 .PHONY: all clean
@@ -27,5 +27,6 @@ clean:
 
 # Code generation for:
 # - Python
-$(PYTHON_GEN)/%_pb2.py: $(PROTOS)/%.proto
+$(PYTHON_GEN)/%_gen.py: $(PROTOS)/%.proto
 	$(PROTO_BUILD) --python_out=$(PYTHON_GEN) $<
+	mv $(subst _gen,_pb2,$@) $@
