@@ -11,6 +11,9 @@ PYTHON_PACKAGE := dynod-api
 # Python package for generated code
 PYTHON_GEN_PACKAGE := dynod/api
 
+# This project shall work with python 3.8
+PYTHON_FOR_VENV := python3.8
+
 # Main makefile suite - defs
 include $(DEVENV_ROOT)/main.mk
 
