@@ -1,32 +1,21 @@
-# General Makefile for interfaces code generation
-.SILENT:
+# Makefile for dynod core api project
 
-# Preliminary checks
-PROTOC := $(shell which protoc || true)
-ifeq ($(PROTOC),)
-$(error "protoc" is not installed)
-endif
+# Setup roots
+WORKSPACE_ROOT := $(CURDIR)/../..
+PROJECT_ROOT := $(CURDIR)
+DEVENV_ROOT := $(WORKSPACE_ROOT)/tools/devenv
 
-# Some paths & defs
-PROTOS := protos
-PYTHON := python
-PYTHON_GEN := $(PYTHON)/src/stuffnodes/api
-PROTO_BUILD := $(PROTOC) --proto_path=$(PROTOS)
+# Python package name
+PYTHON_PACKAGE := dynod-api
 
-# Inputs/outputs
-APIS := $(shell find $(PROTOS) -name *.proto)
-PYTHON_INTERFACES := $(foreach API,$(APIS),$(PYTHON_GEN)/$(subst $(PROTOS)/,,$(subst .proto,,$(API)))_gen.py)
+# Python package for generated code
+PYTHON_GEN_PACKAGE := dynod/api
 
-# Targets
-.PHONY: all clean
+# Main makefile suite - defs
+include $(DEVENV_ROOT)/main.mk
 
-all: $(PYTHON_INTERFACES)
+# Default target is to build Python artifact
+default: build
 
-clean:
-	rm -f $(PYTHON_INTERFACES)
-
-# Code generation for:
-# - Python
-$(PYTHON_GEN)/%_gen.py: $(PROTOS)/%.proto
-	$(PROTO_BUILD) --python_out=$(PYTHON_GEN) $<
-	mv $(subst _gen,_pb2,$@) $@
+# Main makefile suite - rules
+include $(DEVENV_ROOT)/rules.mk
