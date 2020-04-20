@@ -8,8 +8,8 @@ DEVENV_ROOT := $(WORKSPACE_ROOT)/tools/devenv
 # Python package name
 PYTHON_PACKAGE := dynod-api
 
-# Python package for generated code
-PYTHON_GEN_PACKAGE := dynod/api
+# Package for generated code
+PROTO_PACKAGE := dynod/api
 
 # This project shall work with python 3.8
 PYTHON_FOR_VENV := python3.8
