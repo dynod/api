@@ -14,3 +14,7 @@ out/
 
 # Generated code
 src/dynod/api/
+
+# Generated setup files
+/setup.cfg
+/setup.py
