@@ -4,4 +4,4 @@ Common API elements for stuffnodes interfaces
 syntax = "proto3";
 
 // Just an import test
-import "dynod/api/common.proto";
+import "dynod_commons/api/common.proto";

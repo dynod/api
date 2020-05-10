@@ -13,7 +13,7 @@ out/
 .coverage
 
 # Generated code
-src/dynod/api/
+src/dynod_commons/api/
 
 # Generated setup files
 /setup.cfg

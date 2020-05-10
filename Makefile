@@ -5,10 +5,10 @@ WORKSPACE_ROOT := $(CURDIR)/../..
 PROJECT_ROOT := $(CURDIR)
 
 # Python package name
-PYTHON_PACKAGE := dynod-api
+PYTHON_PACKAGE := dynod-commons
 
 # Package for generated code
-PROTO_PACKAGE := dynod/api
+PROTO_PACKAGE := dynod_commons/api
 
 # Main makefile suite - defs
 include $(WORKSPACE_ROOT)/.workspace/main.mk

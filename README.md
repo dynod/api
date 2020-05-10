@@ -1,2 +1,3 @@
-# api
-Shared API for stuffnodes projects
+# Commons
+
+Shared API and utilities for dynod projects.
