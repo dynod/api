@@ -1,2 +1,2 @@
 # gRPC support
-grpcio==1.27.1
+grpcio
