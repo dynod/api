@@ -1,0 +1,84 @@
+/*
+Centralized logs management
+*/
+syntax = "proto3";
+import "dynod_commons/api/common.proto";
+
+/*
+API versions:
+When connecting, the client must check versions with the following rules:
+ - if its current version is greater than the server current one, the server is "too old" for that client
+ - if its current version is lower than the server minimum one, that client is "too old" for the server
+*/
+enum LogsApiVersion {
+    option allow_alias = true;
+    LOGS_API_UNKNOWN = 0;
+    LOGS_API_SUPPORTED = 1; // Minimum supported version for clients
+    LOGS_API_CURRENT = 1;   // Current version
+}
+
+// Logger level
+enum LoggerLevel {
+    LVL_UNKNOWN = 0;    // Level not set
+    LVL_FULL_DEBUG = 5; // All logs (including heavy debug ones)
+    LVL_DEBUG = 10;     // Include debug logs
+    LVL_INFO = 20;      // Normal operation logs level
+    LVL_WARNING = 30;   // Warning messages
+    LVL_ERROR = 40;     // Error messages
+    LVL_CRITICAL = 50;  // Critical/fatal error messages
+}
+
+// Logger configuration
+message LoggerConfig {
+    string name = 1;        // Unique logger name
+    LoggerLevel level = 2;  // Current logger level
+}
+
+// Log event
+message LogEvent {
+    LoggerConfig logger = 1;    // Logger configuration (name/level) to be used for this log event
+    repeated string nodes = 2;  // Node identifiers impacted by this log event (if any)
+    string logs = 3;            // Logs buffer for this event
+}
+
+// Logger status
+message LoggerStatus {
+    Result r = 1;                       // Operation result
+    repeated LoggerConfig items = 2;    // Logger items configuration
+}
+
+// Log filter for fetch
+message LogFilter {
+    repeated string loggers = 1;    // List of logger names to filter
+    repeated string nodes = 2;      // List of nodes identifers to filter (regexp)
+}
+
+// Fetched logs
+message Logs {
+    Result r = 1;               // Operation result
+    uint32 client_id = 2;       // Client ID to be used for stopping current logs fetching operation
+    repeated LogEvent logs = 3; // List of fetched log events (matching with required filter)
+}
+
+// Stop fetch
+message LogStop {
+    uint32 client_id = 1;   // Client ID to stop
+}
+
+// Logs configuration service
+service LogsService {
+    // List known logger levels
+    rpc list (Empty) returns (LoggerStatus);
+
+    // Update a logger configuration
+    rpc update (LoggerConfig) returns (LoggerStatus);
+
+    // Log a new event
+    rpc log (LogEvent) returns (LoggerStatus);
+
+    // Fetch logs
+    rpc fetch (LogFilter) returns (stream Logs);
+
+    // Stop fetching logs
+    rpc stop (LogStop) returns (Result);
+}
