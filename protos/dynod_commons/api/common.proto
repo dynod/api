@@ -14,7 +14,11 @@ enum ResultCode {
     ERROR_PARAM_MISSING = 10;   // There is a missing parameter in input message
 
     // Resource errors
-    ERROR_RESOURCE_UNKNOWN = 20;    // The specified resource is not known to the service
+    ERROR_RESOURCE_UNKNOWN = 20;        // The specified resource is not known to the service
+    ERROR_RESOURCE_ALREADY_EXISTS = 21; // The specified resource already exists
+
+    // Delegated processes errors
+    ERROR_SUBPROCESS_FAILED = 30;   // Some sub-request failed (for any reason)
 }
 
 /*
