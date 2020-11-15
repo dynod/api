@@ -54,12 +54,6 @@ class TestRpcServer(TestHelper):
         yield RpcClient("127.0.0.1", self.rpc_port, {"logs": (LogsServiceStub, LogsApiVersion.LOGS_API_CURRENT)}, name="pytest")
 
     @property
-    def worker_index(self):
-        # TODO: move this up to pytest-multilog
-        worker = self.worker
-        return int(worker[2:]) if worker.startswith("gw") else 0
-
-    @property
     def rpc_port(self) -> int:
         return 52100 + self.worker_index
 
@@ -131,3 +125,6 @@ class TestRpcServer(TestHelper):
             raise AssertionError("Shouldn't get there")
         except RpcError as e:
             assert e.code() == StatusCode.UNAVAILABLE
+
+        # Verify we retried at least one time
+        self.check_logs("(retry)")
