@@ -24,7 +24,7 @@ class RetryStub:
             self.timeout = timeout
             self.metadata = metadata
 
-        def retry_call(self, request):
+        def __call__(self, request):
             LOG.debug(trace_rpc(True, request, method=f"{self.s_name}.{self.m_name}"))
             first_try = time.time()
 
@@ -50,7 +50,7 @@ class RetryStub:
     def __init__(self, real_stub, timeout: float, metadata: tuple):
         # Fake the stub methods
         for n in filter(lambda x: not x.startswith("__") and callable(getattr(real_stub, x)), dir(real_stub)):
-            setattr(self, n, RetryStub.RetryMethod(n, real_stub, timeout, metadata).retry_call)
+            setattr(self, n, RetryStub.RetryMethod(n, real_stub, timeout, metadata))
 
 
 class RpcClient:
