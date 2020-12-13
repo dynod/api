@@ -5,9 +5,9 @@ from grpc import RpcError, StatusCode
 from pytest_multilog import TestHelper
 
 import dynod_commons
-from dynod_commons.api import Empty, InfoApiVersion, LoggerConfig, LoggerStatus, LogsApiVersion, ResultCode, ServiceInfo
+from dynod_commons.api import Empty, InfoApiVersion, LoggerConfig, LoggerStatus, LogsApiVersion, LogStop, ResultCode
 from dynod_commons.api.logs_pb2_grpc import LogsServiceServicer, LogsServiceStub, add_LogsServiceServicer_to_server
-from dynod_commons.rpc import RpcClient, RpcServer
+from dynod_commons.rpc import RpcClient, RpcServer, RpcServiceDescriptor
 from dynod_commons.utils import DynodError
 
 
@@ -22,20 +22,9 @@ class SampleLog(LogsServiceServicer):
 
 
 class TestRpcServer(TestHelper):
+    @property
     def sample_register(self) -> list:
-        return [
-            (
-                ServiceInfo(
-                    name=LogsServiceServicer.__name__,
-                    version="0.0",
-                    current_api_version=LogsApiVersion.LOGS_API_CURRENT,
-                    supported_api_version=LogsApiVersion.LOGS_API_SUPPORTED,
-                ),
-                add_LogsServiceServicer_to_server,
-                LogsServiceServicer(),
-                SampleLog(),
-            )
-        ]
+        return [RpcServiceDescriptor(dynod_commons, LogsApiVersion, SampleLog(), add_LogsServiceServicer_to_server)]
 
     @pytest.fixture
     def sample_server(self):
@@ -80,13 +69,13 @@ class TestRpcServer(TestHelper):
         s = client.info.get(Empty())
         assert len(s.items) == 2
         info = s.items[0]
-        assert info.name == "InfoServiceServicer"
+        assert info.name == dynod_commons.__title__
         assert info.version == dynod_commons.__version__
         assert info.current_api_version == InfoApiVersion.INFO_API_CURRENT
         assert info.supported_api_version == InfoApiVersion.INFO_API_SUPPORTED
         info = s.items[1]
-        assert info.name == "LogsServiceServicer"
-        assert info.version == "0.0"
+        assert info.name == dynod_commons.__title__
+        assert info.version == dynod_commons.__version__
         assert info.current_api_version == LogsApiVersion.LOGS_API_CURRENT
         assert info.supported_api_version == LogsApiVersion.LOGS_API_SUPPORTED
 
@@ -128,3 +117,11 @@ class TestRpcServer(TestHelper):
 
         # Verify we retried at least one time
         self.check_logs("(retry)")
+
+    def test_not_implemented(self, client):
+        # Normal call
+        try:
+            client.logs.stop(LogStop())
+            raise AssertionError("Shouldn't get there")
+        except RpcError as e:
+            assert e.code() == StatusCode.UNIMPLEMENTED

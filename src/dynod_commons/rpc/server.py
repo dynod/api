@@ -2,8 +2,11 @@ import inspect
 import logging
 import traceback
 from concurrent import futures
-from typing import Callable
+from dataclasses import dataclass
+from types import ModuleType
+from typing import Callable, List, NoReturn
 
+from google.protobuf.internal.enum_type_wrapper import EnumTypeWrapper
 from grpc import server
 
 import dynod_commons
@@ -21,7 +24,7 @@ class RpcMethod:
         self.return_type = return_type
         self.info = info
 
-    def server_call(self, request, context):
+    def __call__(self, request, context):
         LOG.debug(trace_rpc(True, request, context=context))
 
         try:
@@ -65,13 +68,38 @@ class RpcServicer:
      * routes method to provided manager
     """
 
-    def __init__(self, servicer_stub: object, manager: object, info: ServiceInfo):
-        # Fake the stub methods
-        for n in filter(lambda x: not x.startswith("__") and callable(getattr(servicer_stub, x)), dir(servicer_stub)):
-            sig = inspect.signature(getattr(manager, n))
+    def __init__(self, manager: object, info: ServiceInfo):
+        # Filter on manager methods
+        for n in filter(lambda x: not x.startswith("_") and callable(getattr(manager, x)), dir(manager)):
+            method = getattr(manager, n)
+            sig = inspect.signature(method)
             return_type = sig.return_annotation
-            LOG.debug(f" >> add method {n} (returns {return_type.__name__})")
-            setattr(self, n, RpcMethod(n, manager, return_type, info).server_call)
+            # Only methods with declared return type + one input parameter
+            if return_type != inspect._empty and len(sig.parameters) == 1:
+                LOG.debug(f" >> add method {n} (returns {return_type.__name__})")
+                setattr(self, n, RpcMethod(n, manager, return_type, info))
+            # Or methods coming from the parent stub
+            elif return_type == inspect._empty and len(sig.parameters) == 2 and all(p in ["request", "context"] for p in sig.parameters.keys()):
+                LOG.debug(f" >> add stub method {n}")
+                setattr(self, n, method)
+
+
+@dataclass
+class RpcServiceDescriptor:
+    """
+    Data class describing a service to be served by the RpcServer class
+
+    Attributes:
+        module: python module providing the service
+        api_version: enum class holding the supported/current API versions
+        manager: object instance to which delegating services requests
+        register_method: method to be called for service registration on the server instance
+    """
+
+    module: ModuleType
+    api_version: EnumTypeWrapper
+    manager: object
+    register_method: Callable[[object, object], NoReturn]
 
 
 class RpcServer(InfoServiceServicer):
@@ -81,18 +109,11 @@ class RpcServer(InfoServiceServicer):
     Arguments:
         port:
             TCP port to be used by the RPC server.
-        get_servicers:
-            function which will be called back to hook RPC servicers for this RPC server instance.
-            Signature:
-                def get_servicers() -> list(tuple(info: ServiceInfo, add_method: callable, stub: object, manager: object))
-            where:
-                *info* is a ServiceInfo object holding API information for this servicer
-                *add_method* is the GRPC generated method to add the servicer to the server instance
-                *stub* is the GRPC generated object instance for this servicer
-                *manager* is an object instance to which delegating method calls for this service
+        descriptors:
+            list of service RpcServiceDescriptor instances.
     """
 
-    def __init__(self, port: int, get_servicers: Callable):
+    def __init__(self, port: int, descriptors: List[RpcServiceDescriptor]):
         self.__port = port
         LOG.debug(f"Starting RPC server on port {self.__port}")
 
@@ -101,33 +122,27 @@ class RpcServer(InfoServiceServicer):
         self.__server = server(futures.ThreadPoolExecutor(max_workers=30))
 
         # To be able to answer to "get info" rpc
-        servicers = [
-            (
-                ServiceInfo(
-                    name=InfoServiceServicer.__name__,
-                    version=dynod_commons.__version__,
-                    current_api_version=InfoApiVersion.INFO_API_CURRENT,
-                    supported_api_version=InfoApiVersion.INFO_API_SUPPORTED,
-                ),
-                add_InfoServiceServicer_to_server,
-                InfoServiceServicer(),
-                self,
-            )
-        ]
+        all_descriptors = [RpcServiceDescriptor(dynod_commons, InfoApiVersion, self, add_InfoServiceServicer_to_server)]
 
         # Get servicers
-        servicers.extend(get_servicers())
+        all_descriptors.extend(descriptors)
 
         # Register everything
         self.__info = []
-        for info, method, stub, manager in servicers:
-            LOG.debug(f"Registering service in RPC server: {trace_buffer(info)}")
+        for descriptor in all_descriptors:
+            # Build info for service
+            versions = list(descriptor.api_version.values())
+            versions.remove(0)
+            info = ServiceInfo(
+                name=descriptor.module.__title__, version=descriptor.module.__version__, current_api_version=max(versions), supported_api_version=min(versions)
+            )
+            LOG.debug(f"Registering service in RPC server: {descriptor.manager.__class__.__name__} -- {trace_buffer(info)}")
 
             # Remember info
             self.__info.append(info)
 
             # Register servicer in RPC server
-            method(RpcServicer(stub, manager, info), self.__server)
+            descriptor.register_method(RpcServicer(descriptor.manager, info), self.__server)
 
         # Setup port and start
         try:
