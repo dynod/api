@@ -10,9 +10,10 @@ enum ResultCode {
     OK = 0;     // All good
     ERROR = 1;  // Unspecified error
 
-    // API errors
+    // API/RPC errors
     ERROR_API_CLIENT_TOO_OLD = 5;   // Client API version is too old for this server
     ERROR_API_SERVER_TOO_OLD = 6;   // Client API version is too recent for this server
+    ERROR_RPC = 7;                  // Innter RPC error
 
     // Parameter errors
     ERROR_PARAM_MISSING = 10;   // There is a missing parameter in input message
