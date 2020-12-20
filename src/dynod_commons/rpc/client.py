@@ -6,9 +6,10 @@ import time
 
 from grpc import RpcError, StatusCode, insecure_channel
 
-from dynod_commons.api import InfoApiVersion
+from dynod_commons.api import InfoApiVersion, Result, ResultCode
 from dynod_commons.api.info_pb2_grpc import InfoServiceStub
 from dynod_commons.rpc.trace import trace_rpc
+from dynod_commons.utils import DynodError
 
 LOG = logging.getLogger(__name__)
 
@@ -25,7 +26,8 @@ class RetryStub:
             self.metadata = metadata
 
         def __call__(self, request):
-            LOG.debug(trace_rpc(True, request, method=f"{self.s_name}.{self.m_name}"))
+            trace = trace_rpc(True, request, method=f"{self.s_name}.{self.m_name}")
+            LOG.debug(trace)
             first_try = time.time()
 
             # Loop to handle retries
@@ -42,9 +44,14 @@ class RetryStub:
                     else:
                         # Timed out or any other reason: raise exception
                         LOG.error(f"<RPC> >> {self.s_name}.{self.m_name} error: {str(e)}")
-                        raise e
+                        raise DynodError(f"RPC error (on {trace}): {e}", rc=ResultCode.ERROR_RPC)
 
-            LOG.debug(trace_rpc(False, result, method=f"{self.s_name}.{self.m_name}"))
+            trace = trace_rpc(False, result, method=f"{self.s_name}.{self.m_name}")
+            LOG.debug(trace)
+            if hasattr(result, "r") and isinstance(result.r, Result) and result.r.code != ResultCode.OK:
+                # Error occurred
+                raise DynodError(f"RPC returned error: {trace}", rc=result.r.code)
+
             return result
 
     def __init__(self, real_stub, timeout: float, metadata: tuple):

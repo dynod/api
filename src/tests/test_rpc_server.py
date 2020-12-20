@@ -1,7 +1,6 @@
 import logging
 
 import pytest
-from grpc import RpcError, StatusCode
 from pytest_multilog import TestHelper
 
 import dynod_commons
@@ -53,8 +52,11 @@ class TestRpcServer(TestHelper):
 
     def test_exceptions(self, client):
         # Error call
-        s = client.logs.update(LoggerConfig())
-        assert s.r.code == ResultCode.ERROR_RESOURCE_UNKNOWN
+        try:
+            client.logs.update(LoggerConfig())
+            raise AssertionError("Shouldn't get here")
+        except DynodError as e:
+            assert e.rc == ResultCode.ERROR_RESOURCE_UNKNOWN
 
     def test_server_forbidden_port(self):
         # Try to use a system port
@@ -88,14 +90,20 @@ class TestRpcServer(TestHelper):
     def test_client_too_old(self, sample_server):
         # Try with client with too old API version
         c = RpcClient("127.0.0.1", self.rpc_port, {"logs": (LogsServiceStub, LogsApiVersion.LOGS_API_CURRENT - 1)})
-        s = c.logs.list(Empty())
-        assert s.r.code == ResultCode.ERROR_API_CLIENT_TOO_OLD
+        try:
+            c.logs.list(Empty())
+            raise AssertionError("Shouldn't get here")
+        except DynodError as e:
+            assert e.rc == ResultCode.ERROR_API_CLIENT_TOO_OLD
 
     def test_server_too_old(self, sample_server):
         # Try with client with API version > server version
         c = RpcClient("127.0.0.1", self.rpc_port, {"logs": (LogsServiceStub, LogsApiVersion.LOGS_API_CURRENT + 1)})
-        s = c.logs.list(Empty())
-        assert s.r.code == ResultCode.ERROR_API_SERVER_TOO_OLD
+        try:
+            c.logs.list(Empty())
+            raise AssertionError("Shouldn't get here")
+        except DynodError as e:
+            assert e.rc == ResultCode.ERROR_API_SERVER_TOO_OLD
 
     def test_no_server(self):
         # Test behavior when client request is made and server is not ready
@@ -103,8 +111,8 @@ class TestRpcServer(TestHelper):
         try:
             c.logs.list(Empty())
             raise AssertionError("Shouldn't get there")
-        except RpcError as e:
-            assert e.code() == StatusCode.UNAVAILABLE
+        except DynodError as e:
+            assert e.rc == ResultCode.ERROR_RPC
 
     def test_no_server_timeout(self):
         # Same as above, with timeout
@@ -112,8 +120,8 @@ class TestRpcServer(TestHelper):
         try:
             c.logs.list(Empty())
             raise AssertionError("Shouldn't get there")
-        except RpcError as e:
-            assert e.code() == StatusCode.UNAVAILABLE
+        except DynodError as e:
+            assert e.rc == ResultCode.ERROR_RPC
 
         # Verify we retried at least one time
         self.check_logs("(retry)")
@@ -123,5 +131,5 @@ class TestRpcServer(TestHelper):
         try:
             client.logs.stop(LogStop())
             raise AssertionError("Shouldn't get there")
-        except RpcError as e:
-            assert e.code() == StatusCode.UNIMPLEMENTED
+        except DynodError as e:
+            assert e.rc == ResultCode.ERROR_RPC
