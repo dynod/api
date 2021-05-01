@@ -1,0 +1,20 @@
+/*
+Nodes definition dynod interfaces
+*/
+syntax = "proto3";
+
+/*
+Common structure to identify a node
+*/
+message Node {
+    string id = 1;  // Unique identifier for this node
+}
+
+/*
+Node description structure
+*/
+message NodeDescription {
+    Node node = 1;      // Node reference
+    string name = 2;    // Name of the node
+    string type = 3;    // Type of the node
+}

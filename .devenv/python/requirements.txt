@@ -1,3 +1,2 @@
-# gRPC support
-grpcio
-protobuf
+# Will need grpc helper
+grpc-helper

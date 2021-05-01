@@ -10,6 +10,9 @@ PYTHON_PACKAGE := dynod-commons
 # Package for generated code
 PROTO_PACKAGE := dynod_commons/api
 
+# Dependencies on grpc-helper api
+PROTO_DEPS := $(WORKSPACE_ROOT)/apis/grpc-helper/protos
+
 # Main makefile suite - defs
 include $(WORKSPACE_ROOT)/.workspace/main.mk
 
