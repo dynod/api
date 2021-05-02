@@ -1,20 +1,84 @@
 /*
-Nodes definition dynod interfaces
+Nodes service handling
 */
 syntax = "proto3";
+import "grpc_helper/api/common.proto";
 
 /*
-Common structure to identify a node
+API versions
 */
-message Node {
-    string id = 1;  // Unique identifier for this node
+enum NodesApiVersion {
+    option allow_alias = true;
+    NODES_API_UNKNOWN = 0;
+    NODES_API_SUPPORTED = 1;    // Minimum supported version for clients
+    NODES_API_CURRENT = 1;      // Current version
 }
 
-/*
-Node description structure
-*/
-message NodeDescription {
-    Node node = 1;      // Node reference
-    string name = 2;    // Name of the node
-    string type = 3;    // Type of the node
+// Supported node types
+enum NodeType {
+    NODE_UNKNOWN = 0;   // Not set
+    NODE_GATEWAY = 1;   // Gateway handling other nodes
+    NODE_GROUP = 2;     // Group of nodes
+    NODE_ACTION = 3;    // Actionable node
+    NODE_SENSOR = 4;    // Sensor node (unable to perform any action)
+}
+
+// Port definition
+message NodePort {
+    string name = 1;    // Port name (usually the used protocol: SSH, Telnet, etc...)
+    uint32 number = 2;  // Port number
+}
+
+// Property definition
+message NodeProperty {
+    string name = 1;    // Property name
+    string value = 2;   // Property value
+}
+
+// Node definition
+message Node {
+    string name = 1;                        // Unique node identifier
+    string label = 2;                       // Node label (short description for UIs)
+    NodeType type = 3;                      // Generic type of the node
+    string gateway = 4;                     // Name of gateway node handling this node (if applicable)
+    repeated string groups = 5;             // Names of node groups containing this node
+    string host = 6;                        // Host/IP of the node (if applicable)
+    repeated NodePort ports = 7;            // Ports used to control the node (if applicable)
+    repeated NodeProperty properties = 8;   // Properties used to configure the node
+}
+
+// Node capabilities
+enum NodeCapabilities {
+    NODE_CAP_UNKNOWN = 0;   // Not set
+    NODE_CAP_GATEWAY = 1;   // Serves the gateway service (able to handle other nodes)
+    NODE_CAP_SWITCH = 2;    // Serves the switch service (node can be switched on/off)
+}
+
+// Node status
+message NodeStatusItem {
+    Node node = 1;                              // The node itself
+    bool reachable = 2;                         // If the node is reachable
+    repeated NodeProperty ro_properties = 3;    // Read-only properties detected from the node
+    NodePort access = 4;                        // Access port for node RPC services (according to capabilities)
+    NodeCapabilities capabilities = 5;          // Service capabilities for this node
+}
+
+// Node status message
+message NodeStatus {
+    Result r = 1;   // Operation result
+}
+
+// Filter used for nodes listing
+message NodeFilter {
+    repeated string names = 1;                  // To filter nodes by names
+    repeated NodeType types = 2;                // To filter nodes by types
+    repeated NodeCapabilities capabilities = 3; // To filter nodes by capabilities
+    repeated string gateways = 4;               // To filter nodes by gateways
+    repeated string groups = 5;                 // To filter nodes by groups
+}
+
+// Nodes service
+service NodeService {
+    // List known nodes
+    rpc list(NodeFilter) returns (NodeStatus);
 }
