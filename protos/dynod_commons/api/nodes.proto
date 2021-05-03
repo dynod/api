@@ -25,8 +25,9 @@ enum NodeType {
 
 // Port definition
 message NodePort {
-    string name = 1;    // Port name (usually the used protocol: SSH, Telnet, etc...)
-    uint32 number = 2;  // Port number
+    string name = 1;        // Port name (usually the used protocol: SSH, Telnet, etc...)
+    uint32 number = 2;      // Port number
+    string credentials = 3; // Credentials to access this node's port (login:password, token, etc...)
 }
 
 // Property definition
