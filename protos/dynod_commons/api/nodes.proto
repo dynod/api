@@ -66,7 +66,8 @@ message NodeStatusItem {
 
 // Node status message
 message NodeStatus {
-    Result r = 1;   // Operation result
+    Result r = 1;                       // Operation result
+    repeated NodeStatusItem items = 2;  // Nodes status
 }
 
 // Filter used for nodes listing
@@ -82,4 +83,16 @@ message NodeFilter {
 service NodeService {
     // List known nodes
     rpc list(NodeFilter) returns (NodeStatus);
+
+    // Add a new node
+    rpc add(Node) returns (NodeStatus);
+
+    // Update an existing node
+    rpc update(Node) returns (NodeStatus);
+
+    // Remove existing node(s)
+    rpc remove(NodeFilter) returns (NodeStatus);
+
+    // Rename an existing node
+    rpc rename(Rename) returns (NodeStatus);
 }
