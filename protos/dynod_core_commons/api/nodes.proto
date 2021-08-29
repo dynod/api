@@ -3,6 +3,7 @@ Nodes service handling
 */
 syntax = "proto3";
 import "grpc_helper/api/common.proto";
+import "dynod_core_commons/api/shared.proto";
 
 /*
 API versions

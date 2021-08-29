@@ -1,0 +1,10 @@
+/*
+Shared messages and enums for dynod api
+*/
+syntax = "proto3";
+
+// Item rename message
+message Rename {
+    string name = 1;           // Current item name
+    string new_name = 2;       // New item name
+}
