@@ -42,7 +42,7 @@ message Node {
     string name = 1;                        // Unique node identifier
     string label = 2;                       // Node label (short description for UIs)
     NodeType type = 3;                      // Generic type of the node
-    string gateway = 4;                     // Name of gateway node handling this node (if applicable)
+    string gateway = 4;                     // Name of gateway node/model handling this node (if applicable)
     repeated string groups = 5;             // Names of node groups containing this node
     string host = 6;                        // Host/IP of the node (if applicable)
     repeated NodePort ports = 7;            // Ports used to control the node (if applicable)
@@ -96,4 +96,24 @@ service NodeService {
 
     // Rename an existing node
     rpc rename(Rename) returns (NodeStatus);
+}
+
+// Gateway registration message
+message GatewayRegisterRequest {
+    string model = 1;       // Gateway model to be registered (to be used in gateway field of declared NODE_GATEWAY node instances)
+    NodePort access = 2;    // Access port for gateway model NodeService instance
+}
+
+// Gateway firget message
+message GatewayForgetRequest {
+    string model = 1;       // Gateway model to be forgotten
+}
+
+// Gateway registration service
+service GatewayRegisterServive {
+    // Register a new gateway
+    rpc register(GatewayRegisterRequest) returns (ResultStatus);
+
+    // Forget a known gateway
+    rpc forget(GatewayForgetRequest) returns (ResultStatus);
 }
